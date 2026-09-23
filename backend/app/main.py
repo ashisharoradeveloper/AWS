@@ -1,3 +1,5 @@
+import os
+
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -8,7 +10,7 @@ MAX_UPLOAD_BYTES = 5 * 1024 * 1024
 app = FastAPI(title="AWS File Processing Lab API", version="0.1.0")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=[os.getenv("FRONTEND_ORIGIN", "http://localhost:5173")],
     allow_credentials=False,
     allow_methods=["GET", "POST"],
     allow_headers=["*"],
