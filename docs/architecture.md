@@ -16,6 +16,16 @@ PostgreSQL     Local file storage
 
 The frontend and backend have clear API and module boundaries, but they are developed and deployed as a small number of local services. CSV processing is initially an application service invoked by the backend. This keeps the first version easy to run, debug, and test.
 
+## EC2 learning deployment
+
+For the EC2 deployment exercise, an Nginx gateway is the only public application entry point. It forwards `/api/` requests to FastAPI and all other requests to the Vite frontend over a private Docker network. The browser uses same-origin `/api/` URLs, avoiding a separate public API origin and its CORS configuration. The current frontend container still runs Vite's development server; replace it with a production static build before treating this as a production deployment.
+
+```text
+Browser -> EC2 Elastic IP:80 -> Nginx gateway
+                                  |-> frontend:5173
+                                  `-> backend:8000 (/api/)
+```
+
 ## Responsibilities
 
 ### Frontend

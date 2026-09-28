@@ -48,7 +48,15 @@ Move processing to a worker only when file sizes, processing duration, concurren
 - Add structured logs, metrics, tracing, and correlation IDs.
 - Make status transitions and failure recovery observable.
 
-## Phase 5: AWS evolution
+## Phase 5: EC2 deployment learning
+
+- Assign an Elastic IP to keep the EC2 public address stable.
+- Run the existing frontend and backend containers on a private Docker network.
+- Add an Nginx gateway as the sole public entry point, routing `/api/` to FastAPI and other paths to the frontend.
+- Validate health and CSV upload over the single public origin; expose port 80 rather than the application ports.
+- Replace the Vite development server with a production frontend build before treating this as production deployment.
+
+## Phase 6: AWS evolution
 
 Adopt managed AWS components one at a time, preserving the application contracts:
 
