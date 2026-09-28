@@ -18,11 +18,11 @@ The frontend and backend have clear API and module boundaries, but they are deve
 
 ## EC2 learning deployment
 
-For the EC2 deployment exercise, an Nginx gateway is the only public application entry point. It forwards `/api/` requests to FastAPI and all other requests to the Vite frontend over a private Docker network. The browser uses same-origin `/api/` URLs, avoiding a separate public API origin and its CORS configuration. The current frontend container still runs Vite's development server; replace it with a production static build before treating this as a production deployment.
+For the EC2 learning deployment, a production Nginx image serves the built React assets and is the only public application entry point. It forwards `/api/` requests to FastAPI over a private Docker network. The browser uses same-origin `/api/` URLs, avoiding a separate public API origin and its CORS configuration. The Nginx image is built from `docker/Dockerfile`, which first builds the frontend with Node.js and then copies the static output into Nginx.
 
 ```text
 Browser -> EC2 Elastic IP:80 -> Nginx gateway
-                                  |-> frontend:5173
+                                  |-> static React assets
                                   `-> backend:8000 (/api/)
 ```
 

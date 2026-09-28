@@ -51,10 +51,10 @@ Move processing to a worker only when file sizes, processing duration, concurren
 ## Phase 5: EC2 deployment learning
 
 - Assign an Elastic IP to keep the EC2 public address stable.
-- Run the existing frontend and backend containers on a private Docker network.
-- Add an Nginx gateway as the sole public entry point, routing `/api/` to FastAPI and other paths to the frontend.
+- Run the backend on a private Docker network and build the frontend as static assets into the Nginx gateway image.
+- Use Nginx as the sole public entry point, routing `/api/` to FastAPI and serving the frontend assets directly.
 - Validate health and CSV upload over the single public origin; expose port 80 rather than the application ports.
-- Replace the Vite development server with a production frontend build before treating this as production deployment.
+- Keep the Vite development server for local development only.
 
 ## Phase 6: AWS evolution
 

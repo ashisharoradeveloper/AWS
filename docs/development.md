@@ -47,38 +47,34 @@ The frontend is available at `http://localhost:5173`. The API is available at `h
 
 The backend container mounts `backend/app` for quick code iteration. The frontend container mounts the source tree and keeps `node_modules` in a Docker volume.
 
-## EC2 direct-Docker learning deployment
+## EC2 direct-Docker production frontend deployment
 
-This deployment uses the existing Docker images without Compose. Nginx is the only container publishing a host port; the frontend and backend communicate with it over a user-defined Docker network. The browser and API share one origin, so the frontend uses a relative `/api/` URL.
+This learning deployment uses two containers and no Compose. The production `aws-gateway` image is multi-stage: Node.js builds the React frontend into static assets, then Nginx serves those assets and proxies `/api/` requests to FastAPI. Only Nginx publishes a host port. The frontend API URL is baked into the static bundle at image-build time; an empty `VITE_API_URL` makes browser requests same-origin at `/api/...`.
 
-From the repository root on EC2, build the images:
+From the repository root on EC2, update the code, build both images, and create the private network:
 
 ```shell
+cd ~/AWS
+git pull --ff-only
 docker build -t aws-backend ./backend
-docker build -t aws-frontend ./frontend
+docker build -f docker/Dockerfile -t aws-gateway:production --build-arg VITE_API_URL= .
 docker network inspect aws-lab >/dev/null 2>&1 || docker network create aws-lab
 ```
 
-Replace the existing app containers with network-only containers, then start the gateway:
+Replace the containers and start the backend before the gateway so Docker DNS can resolve its name:
 
 ```shell
 docker rm -f aws-gateway aws-frontend aws-backend 2>/dev/null || true
 docker run -d --name aws-backend --network aws-lab --restart unless-stopped aws-backend
-docker run -d --name aws-frontend --network aws-lab --restart unless-stopped \
-	-e VITE_API_URL= aws-frontend
 docker run -d --name aws-gateway --network aws-lab --restart unless-stopped \
-	-p 80:80 \
-	-v "$HOME/AWS/docker/nginx.conf:/etc/nginx/conf.d/default.conf:ro" \
-	nginx:alpine
+  -p 80:80 aws-gateway:production
 ```
 
-The `docker rm -f` command replaces containers with these names, so it causes a brief outage. Allow inbound TCP port 80 in the EC2 security group. After testing the app through the Elastic IP, port 5173 and 8000 no longer need public inbound rules. The current frontend image runs Vite's development server; use a production static build before exposing this as a production service.
-
-Verify on EC2 with `curl http://localhost/` and `curl http://localhost/api/v1/health`, then open `http://<elastic-ip>/` from a browser and upload a CSV.
+The `docker rm -f` command replaces existing containers with those names and causes a brief outage. Allow inbound TCP port 80 in the EC2 security group; after verifying the deployment, ports 5173 and 8000 do not need public inbound rules. Verify on EC2 with `curl http://localhost/` and `curl http://localhost/api/v1/health`, then open `http://<elastic-ip>/` and upload a CSV.
 
 ## Configuration and secrets
 
-Use environment variables for database URLs, secret keys, storage roots, upload limits, and runtime configuration as those features are introduced. Provide a safe example configuration file such as `.env.example`; never commit real credentials. The current frontend uses `VITE_API_URL`, defaulting to `http://localhost:8000`.
+Use environment variables for database URLs, secret keys, storage roots, upload limits, and runtime configuration as those features are introduced. Provide a safe example configuration file such as `.env.example`; never commit real credentials. Local development uses `VITE_API_URL` to reach the API; the production EC2 bundle is built with an empty value and uses same-origin `/api/` requests through Nginx.
 
 ## Testing approach
 
