@@ -1,7 +1,8 @@
 FROM node:22-alpine AS frontend-build
 
 WORKDIR /app
-COPY frontend/package*.json ./
+COPY frontend/package.json ./
+# Resolve OS-specific optional packages inside Linux instead of reusing a host lockfile.
 RUN npm install --include=optional
 COPY frontend/ ./
 ARG VITE_API_URL=
