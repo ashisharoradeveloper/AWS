@@ -68,3 +68,9 @@ Adopt managed AWS components one at a time, preserving the application contracts
 - A managed identity provider only if application-managed authentication becomes an operational burden.
 
 Each adoption should include a reason, cost/complexity review, rollback or local-development story, and updated architecture documentation.
+
+## Phase 7: deployment automation
+
+- Use GitHub Actions with OIDC to build and push commit-tagged images to ECR.
+- Deploy the selected image tags to EC2 through Systems Manager Run Command.
+- Verify deployment health and retain a previous image tag for rollback.

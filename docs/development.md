@@ -72,6 +72,20 @@ docker run -d --name aws-gateway --network aws-lab --restart unless-stopped \
 
 The `docker rm -f` command replaces existing containers with those names and causes a brief outage. Allow inbound TCP port 80 in the EC2 security group; after verifying the deployment, ports 5173 and 8000 do not need public inbound rules. Verify on EC2 with `curl http://localhost/` and `curl http://localhost/api/v1/health`, then open `http://<elastic-ip>/` and upload a CSV.
 
+## GitHub Actions deployment automation
+
+`.github/workflows/deploy.yml` runs on application/deployment changes pushed to `main` or through manual workflow dispatch. It uses GitHub OIDC to assume an AWS deployment role, builds both images for `linux/amd64`, tags them with the short Git commit ID, pushes them to ECR, and uses AWS Systems Manager Run Command to pull and restart the containers on the configured EC2 instance. This avoids storing long-lived AWS keys or an SSH private key in GitHub.
+
+Before enabling the workflow:
+
+- Configure the GitHub OIDC identity provider and a deployment role trusted only for `repo:ashisharoradeveloper/AWS:ref:refs/heads/main`.
+- Give that role ECR push permissions on the two project repositories and permission to send/poll SSM commands for the target instance.
+- Attach `AmazonSSMManagedInstanceCore` to the existing EC2 instance role `EC2-ECR`; the instance already has ECR read-only access and the SSM agent is running.
+- Add repository variables `AWS_DEPLOY_ROLE_ARN` and `EC2_INSTANCE_ID` in GitHub. The workflow targets `us-east-1` and the existing ECR repositories.
+- Confirm the instance appears as `Online` in Systems Manager Fleet Manager / Managed nodes before running the workflow.
+
+The workflow replaces running containers after it has pulled both new images, then checks `/api/v1/health`. Image tags are short Git commit IDs, making a previous image version identifiable for rollback.
+
 ## Configuration and secrets
 
 Use environment variables for database URLs, secret keys, storage roots, upload limits, and runtime configuration as those features are introduced. Provide a safe example configuration file such as `.env.example`; never commit real credentials. Local development uses `VITE_API_URL` to reach the API; the production EC2 bundle is built with an empty value and uses same-origin `/api/` requests through Nginx.

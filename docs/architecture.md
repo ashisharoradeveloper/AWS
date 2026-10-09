@@ -26,6 +26,8 @@ Browser -> EC2 Elastic IP:80 -> Nginx gateway
                                   `-> backend:8000 (/api/)
 ```
 
+For deployment automation, GitHub Actions builds and publishes commit-tagged images to ECR using GitHub OIDC credentials, then invokes AWS Systems Manager Run Command to update EC2. This avoids long-lived AWS credentials and inbound SSH access for deployment automation.
+
 ## Responsibilities
 
 ### Frontend
